@@ -21,10 +21,9 @@ from utils.averagemeter import AverageMeter
 from utils.utils import torch_to_list, get_num_signs
 from eval import Metric
 
-
-class MultiStageModel(nn.Module):
+class TransformerModel(nn.Module):
     def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes):
-        super(MultiStageModel, self).__init__()
+        super(TransformerModel, self).__init__()
         self.num_classes = num_classes
         self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)
         self.stages = nn.ModuleList([copy.deepcopy(SingleStageModel(num_layers, num_f_maps, num_classes, num_classes)) for s in range(num_stages-1)])
@@ -73,7 +72,7 @@ class DilatedResidualLayer(nn.Module):
 
 class Trainer:
     def __init__(self, num_blocks, num_layers, num_f_maps, dim, num_classes, device, weights, save_dir):
-        self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
+        self.model = TransformerModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
         if weights is None:
             self.ce = nn.CrossEntropyLoss(ignore_index=-100)
         else:
