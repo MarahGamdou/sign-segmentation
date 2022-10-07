@@ -8,7 +8,7 @@ import torch
 from utils.utils import get_labels_start_end_time, torch_to_list
 
 
-class Metric():
+class Metric:
     def __init__(self, run_type):
         self.run_type = run_type
         self.overlap = list(np.arange(0.4, 0.76, 0.05))
@@ -39,14 +39,25 @@ class Metric():
             self.correct += (pred == gt_eval).int().sum().item()
             self.total += gt_eval.shape[1]
         else:
-            self.correct += ((pred == gt).float()*mask[:, 0, :].squeeze(1)).sum().item()
+            self.correct += (
+                ((pred == gt).float() * mask[:, 0, :].squeeze(1)).sum().item()
+            )
             self.total += torch.sum(mask[:, 0, :]).item()
 
         pred = [item for sublist in torch_to_list(pred) for item in sublist]
         gt_eval = [item for sublist in torch_to_list(gt_eval) for item in sublist]
         gt = [item for sublist in torch_to_list(gt) for item in sublist]
 
-        tp_list1, fp_list1, fn_list1, num_det1, num_gt1, dist1, width_pred1, width_gt1 = get_boundary_metric(pred, gt_eval, self.thresholds_b, bg_class=[0, -100])
+        (
+            tp_list1,
+            fp_list1,
+            fn_list1,
+            num_det1,
+            num_gt1,
+            dist1,
+            width_pred1,
+            width_gt1,
+        ) = get_boundary_metric(pred, gt_eval, self.thresholds_b, bg_class=[0, -100])
         self.tp_list_b += tp_list1
         self.fp_list_b += fp_list1
         self.fn_list_b += fn_list1
@@ -56,7 +67,9 @@ class Metric():
         self.width_gt.append(width_gt1)
         self.width_pred.append(width_pred1)
 
-        tp_list1, fp_list1, fn_list1, mean_iou = get_sign_metric(pred, gt, self.overlap, bg_class=[1, -100])
+        tp_list1, fp_list1, fn_list1, mean_iou = get_sign_metric(
+            pred, gt, self.overlap, bg_class=[1, -100]
+        )
         self.iou.append(mean_iou)
         self.tp_list += tp_list1
         self.fp_list += fp_list1
@@ -66,12 +79,12 @@ class Metric():
         self.mean_iou_ges = np.mean(self.iou)
         self.f1_sign = []
         for s in range(len(self.overlap)):
-            self.precision = self.tp_list[s] / float(self.tp_list[s]+self.fp_list[s])
-            self.recall = self.tp_list[s] / float(self.tp_list[s]+self.fn_list[s])
+            self.precision = self.tp_list[s] / float(self.tp_list[s] + self.fp_list[s])
+            self.recall = self.tp_list[s] / float(self.tp_list[s] + self.fn_list[s])
 
-            f1 = 2.0 * (self.precision*self.recall) / (self.precision+self.recall)
+            f1 = 2.0 * (self.precision * self.recall) / (self.precision + self.recall)
 
-            f1 = np.nan_to_num(f1)*100
+            f1 = np.nan_to_num(f1) * 100
             self.f1_sign.append(round(f1, 2))
 
         self.mean_f1s = np.mean(self.f1_sign)
@@ -81,15 +94,23 @@ class Metric():
         self.recall_list = []
         self.precision_list = []
         for s in range(len(self.thresholds_b)):
-            self.precision_b = self.tp_list_b[s] / float(self.tp_list_b[s]+self.fp_list_b[s])
-            self.recall_b = self.tp_list_b[s] / float(self.tp_list_b[s]+self.fn_list_b[s])
+            self.precision_b = self.tp_list_b[s] / float(
+                self.tp_list_b[s] + self.fp_list_b[s]
+            )
+            self.recall_b = self.tp_list_b[s] / float(
+                self.tp_list_b[s] + self.fn_list_b[s]
+            )
 
-            f1_b = 2.0 * (self.precision_b*self.recall_b) / (self.precision_b+self.recall_b)
+            f1_b = (
+                2.0
+                * (self.precision_b * self.recall_b)
+                / (self.precision_b + self.recall_b)
+            )
 
-            f1_b = np.nan_to_num(f1_b)*100
+            f1_b = np.nan_to_num(f1_b) * 100
             self.f1b.append(f1_b)
-            self.recall_list.append(self.recall_b*100)
-            self.precision_list.append(self.precision_b*100)
+            self.recall_list.append(self.recall_b * 100)
+            self.precision_list.append(self.precision_b * 100)
 
         self.mean_f1b = round(np.mean(self.f1b), 2)
         self.mean_recall_b = round(np.mean(self.recall_list), 2)
@@ -99,65 +120,70 @@ class Metric():
         self.mean_width_pred = np.mean(self.width_pred)
         self.mean_width_gt = np.mean(self.width_gt)
 
-
     def save_print_metrics(self, writer, save_dir, epoch, epoch_loss):
 
-        writer.add_scalar(f'{self.run_type}/mF1B', self.mean_f1b, epoch+1)
-        writer.add_scalar(f'{self.run_type}/mF1S', self.mean_f1s, epoch+1)
+        writer.add_scalar(f"{self.run_type}/mF1B", self.mean_f1b, epoch + 1)
+        writer.add_scalar(f"{self.run_type}/mF1S", self.mean_f1s, epoch + 1)
 
-        #add to dict
+        # add to dict
         result_dict = {epoch: {}}
         result_dict[epoch] = {
-            'mF1B': self.mean_f1b,
-            'F1S': self.f1_sign[-1],
-            'mF1S': self.mean_f1s,
-            'IoU': 100*self.mean_iou_ges,
-            'widthB': self.mean_width_pred,
-            'dist': self.mean_dist,
-            'detB': self.num_det,
+            "mF1B": self.mean_f1b,
+            "F1S": self.f1_sign[-1],
+            "mF1S": self.mean_f1s,
+            "IoU": 100 * self.mean_iou_ges,
+            "widthB": self.mean_width_pred,
+            "dist": self.mean_dist,
+            "detB": self.num_det,
         }
 
-        if self.run_type == 'train' or self.run_type == 'eval':
+        if self.run_type == "train" or self.run_type == "eval":
             print_str = f"[E{epoch + 1} / {self.run_type}]: epoch loss = {epoch_loss:.4f},   acc = {100*float(self.correct)/self.total:.2f}, mean F1B = {self.mean_f1b:.2f}, mean_F1S = {self.mean_f1s:.2f}"
             save_str = f"[E{epoch + 1} / {self.run_type}]: epoch loss = {epoch_loss:.4f},   acc = {100*float(self.correct)/self.total:.2f}, F1_bound = {self.f1b}, mean_recall_b = {self.mean_recall_b}, mean_precision_b = {self.mean_precision_b}, mean F1B = {self.mean_f1b:.2f}, F1_sign = {self.f1_sign}, mean_F1S = {self.mean_f1s:.2f}, IoU_sign = {100*self.mean_iou_ges:.2f}, #B ({self.num_det}/{self.num_gt}), dist = {self.mean_dist}, boundary width: {self.mean_width_pred:.2f} / {self.mean_width_gt:.2f}  \n"
 
-            if self.run_type == 'train':
-                print(f'\n{print_str}')
+            if self.run_type == "train":
+                print(f"\n{print_str}")
             else:
-                print(f'{print_str}\n')
+                print(f"{print_str}\n")
 
-            with open(f'{save_dir}/train_progress.txt', 'a+') as f:
-                if self.run_type == 'train':
-                    f.write('\n\n ---------------------------------------------------\n')
+            with open(f"{save_dir}/train_progress.txt", "a+") as f:
+                if self.run_type == "train":
+                    f.write(
+                        "\n\n ---------------------------------------------------\n"
+                    )
                 f.write(save_str)
 
-        elif self.run_type == 'test':
-            save_dir = f'{str(Path(save_dir).parent)}/{str(Path(save_dir).stem)}.txt'
+        elif self.run_type == "test":
+            save_dir = f"{str(Path(save_dir).parent)}/{str(Path(save_dir).stem)}.txt"
 
             print(f"Acc: {(100*float(self.correct)/self.total):.2f}")
             print(f"F1B: {(self.f1b)}")
             print(f"mean Recall B: {(self.mean_recall_b)}")
             print(f"mean Precision B: {(self.mean_precision_b)}")
-            print(f'mean F1B: {(self.mean_f1b):.2f}')
-            print(f'IoU Sign: {(100*self.mean_iou_ges):.2f}')
-            print(f'F1s: {(self.f1_sign)}')
-            print(f'mean F1S: {(self.mean_f1s):.2f}')
-            print(f'#B:  ({self.num_det}/{self.num_gt})')
-            print(f'mean dist [frames]: {self.mean_dist:.2f}')
-            print(f'mean B width pred/gt [frames]: {self.mean_width_pred:.2f} / {self.mean_width_gt:.2f} \n')
+            print(f"mean F1B: {(self.mean_f1b):.2f}")
+            print(f"IoU Sign: {(100*self.mean_iou_ges):.2f}")
+            print(f"F1s: {(self.f1_sign)}")
+            print(f"mean F1S: {(self.mean_f1s):.2f}")
+            print(f"#B:  ({self.num_det}/{self.num_gt})")
+            print(f"mean dist [frames]: {self.mean_dist:.2f}")
+            print(
+                f"mean B width pred/gt [frames]: {self.mean_width_pred:.2f} / {self.mean_width_gt:.2f} \n"
+            )
 
-            with open(save_dir, 'a+') as f:
-                f.write(f'Acc: {(100*float(self.correct)/self.total):.2f} \n')
-                f.write(f'F1b: {(self.f1b)} \n')
-                f.write(f'mean Recall B: {(self.mean_recall_b):.2f} \n')
-                f.write(f'mean Precision B: {(self.mean_precision_b):.2f} \n')
-                f.write(f'mean F1b: {(self.mean_f1b):.2f} \n')
-                f.write(f'IoU Sign: {(100*self.mean_iou_ges):.2f} \n')
-                f.write(f'F1s: {(self.f1_sign)} \n')
-                f.write(f'mean F1S: {(self.mean_f1s):.2f} \n')
-                f.write(f'#B:  ({self.num_det}/{self.num_gt})  \n')
-                f.write(f'mean dist [frames]: {self.mean_dist:.2f} \n')
-                f.write(f'mean B width pred/gt [frames]: {self.mean_width_pred:.2f} / {self.mean_width_gt:.2f} \n')
+            with open(save_dir, "a+") as f:
+                f.write(f"Acc: {(100*float(self.correct)/self.total):.2f} \n")
+                f.write(f"F1b: {(self.f1b)} \n")
+                f.write(f"mean Recall B: {(self.mean_recall_b):.2f} \n")
+                f.write(f"mean Precision B: {(self.mean_precision_b):.2f} \n")
+                f.write(f"mean F1b: {(self.mean_f1b):.2f} \n")
+                f.write(f"IoU Sign: {(100*self.mean_iou_ges):.2f} \n")
+                f.write(f"F1s: {(self.f1_sign)} \n")
+                f.write(f"mean F1S: {(self.mean_f1s):.2f} \n")
+                f.write(f"#B:  ({self.num_det}/{self.num_gt})  \n")
+                f.write(f"mean dist [frames]: {self.mean_dist:.2f} \n")
+                f.write(
+                    f"mean B width pred/gt [frames]: {self.mean_width_pred:.2f} / {self.mean_width_gt:.2f} \n"
+                )
 
         return result_dict
 
@@ -173,14 +199,14 @@ def get_boundary_metric(pred, gt, thresholds, bg_class=[0]):
     num_pred = len(p_label)
     num_gt = len(y_label)
 
-    pos_p = [(p_end[i]+p_start[i])/2 for i in range(len(p_label))]
-    pos_y = [(y_end[i]+y_start[i])/2 for i in range(len(y_label))]
+    pos_p = [(p_end[i] + p_start[i]) / 2 for i in range(len(p_label))]
+    pos_y = [(y_end[i] + y_start[i]) / 2 for i in range(len(y_label))]
 
     # calculate distance matrix
     if len(p_label) > 0:
         dist_all = []
         for p in pos_p:
-            dist_all.append([abs(y-p) for y in pos_y])
+            dist_all.append([abs(y - p) for y in pos_y])
         dist_arr = np.asarray(dist_all)
 
         # calculate mean distance
@@ -219,7 +245,7 @@ def get_boundary_metric(pred, gt, thresholds, bg_class=[0]):
                 fp += 1
 
         # more predictions than gt -> count as false positiv
-        fp += max(0, len(p_label)-len(dist_choosen))
+        fp += max(0, len(p_label) - len(dist_choosen))
         # difference between number of true boundaries and correct predicted ones -> false negative
         fn = len(y_label) - tp
 
@@ -227,7 +253,16 @@ def get_boundary_metric(pred, gt, thresholds, bg_class=[0]):
         fp_list.append(fp)
         fn_list.append(fn)
 
-    return np.asarray(tp_list), np.asarray(fp_list), np.asarray(fn_list), num_pred, num_gt, mean_dist, mean_boundary_width_pred, mean_boundary_width_gt
+    return (
+        np.asarray(tp_list),
+        np.asarray(fp_list),
+        np.asarray(fn_list),
+        num_pred,
+        num_gt,
+        mean_dist,
+        mean_boundary_width_pred,
+        mean_boundary_width_gt,
+    )
 
 
 def get_sign_metric(pred, gt, overlap, bg_class=[1]):
@@ -238,7 +273,10 @@ def get_sign_metric(pred, gt, overlap, bg_class=[1]):
     for j in range(len(p_label)):
         intersection = np.minimum(p_end[j], y_end) - np.maximum(p_start[j], y_start)
         union = np.maximum(p_end[j], y_end) - np.minimum(p_start[j], y_start)
-        iou_all.append((1.0*intersection / union)*([p_label[j] == y_label[x] for x in range(len(y_label))]))
+        iou_all.append(
+            (1.0 * intersection / union)
+            * ([p_label[j] == y_label[x] for x in range(len(y_label))])
+        )
 
     iou_arr = np.asarray(iou_all)
     iou_choosen = []
@@ -268,13 +306,13 @@ def get_sign_metric(pred, gt, overlap, bg_class=[1]):
                 tp += 1
             else:
                 fp += 1
-        fp += max(0, len(p_label)-len(iou_choosen))
+        fp += max(0, len(p_label) - len(iou_choosen))
         fn = len(y_label) - tp
         tp_list.append(tp)
         fp_list.append(fp)
         fn_list.append(fn)
 
-    iou_choosen.extend([0]*diff)
+    iou_choosen.extend([0] * diff)
     mean_iou = np.mean(iou_choosen)
 
     return np.asarray(tp_list), np.asarray(fp_list), np.asarray(fn_list), mean_iou

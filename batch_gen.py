@@ -29,7 +29,7 @@ class BatchGenerator(object):
         random.shuffle(self.list_of_examples)
 
     def next_batch(self, batch_size):
-        batch = self.list_of_examples[self.index:self.index + batch_size]
+        batch = self.list_of_examples[self.index : self.index + batch_size]
         self.index += batch_size
 
         batch_input = []
@@ -48,29 +48,60 @@ class BatchGenerator(object):
 
         shape_index = 0
         length_of_sequences = [item.shape[shape_index] for item in batch_target]
-        batch_input_tensor = torch.zeros(len(batch), np.shape(batch_input[0])[0],  max(length_of_sequences), dtype=torch.float)
+        batch_input_tensor = torch.zeros(
+            len(batch),
+            np.shape(batch_input[0])[0],
+            max(length_of_sequences),
+            dtype=torch.float,
+        )
 
         # regression
         if self.num_classes == 1:
-            batch_target_tensor = torch.ones(len(batch), max(length_of_sequences), dtype=torch.float)*(-100.)
-            batch_target_eval_tensor = torch.ones(len(batch), max(length_of_sequences), dtype=torch.float)*(-100.)
+            batch_target_tensor = torch.ones(
+                len(batch), max(length_of_sequences), dtype=torch.float
+            ) * (-100.0)
+            batch_target_eval_tensor = torch.ones(
+                len(batch), max(length_of_sequences), dtype=torch.float
+            ) * (-100.0)
             shape_index = 0
 
         # classification
         else:
-            batch_target_tensor = torch.ones(len(batch), max(length_of_sequences), dtype=torch.long)*(-100)
-            batch_target_eval_tensor = torch.ones(len(batch), max(length_of_sequences), dtype=torch.long)*(-100)
+            batch_target_tensor = torch.ones(
+                len(batch), max(length_of_sequences), dtype=torch.long
+            ) * (-100)
+            batch_target_eval_tensor = torch.ones(
+                len(batch), max(length_of_sequences), dtype=torch.long
+            ) * (-100)
             shape_index = 0
 
-        mask = torch.zeros(len(batch_input), self.num_classes, max(length_of_sequences), dtype=torch.float)
+        mask = torch.zeros(
+            len(batch_input),
+            self.num_classes,
+            max(length_of_sequences),
+            dtype=torch.float,
+        )
         for i in range(len(batch_input)):
-            batch_input_tensor[i, :, :np.shape(batch_input[i])[1]] = torch.from_numpy(batch_input[i])
-            batch_target_tensor[i, :np.shape(batch_target[i])[shape_index]] = torch.from_numpy(batch_target[i])
-            mask[i, :, :np.shape(batch_target[i])[shape_index]] = torch.ones(self.num_classes, np.shape(batch_target[i])[shape_index])
+            batch_input_tensor[i, :, : np.shape(batch_input[i])[1]] = torch.from_numpy(
+                batch_input[i]
+            )
+            batch_target_tensor[
+                i, : np.shape(batch_target[i])[shape_index]
+            ] = torch.from_numpy(batch_target[i])
+            mask[i, :, : np.shape(batch_target[i])[shape_index]] = torch.ones(
+                self.num_classes, np.shape(batch_target[i])[shape_index]
+            )
             if self.gt_dict_eval is not None:
-                batch_target_eval_tensor[i, :np.shape(batch_target_eval[i])[shape_index]] = torch.from_numpy(batch_target_eval[i])
+                batch_target_eval_tensor[
+                    i, : np.shape(batch_target_eval[i])[shape_index]
+                ] = torch.from_numpy(batch_target_eval[i])
 
         if self.gt_dict_eval is not None:
-            return batch_input_tensor, batch_target_tensor, batch_target_eval_tensor, mask
+            return (
+                batch_input_tensor,
+                batch_target_tensor,
+                batch_target_eval_tensor,
+                mask,
+            )
         else:
             return batch_input_tensor, batch_target_tensor, mask

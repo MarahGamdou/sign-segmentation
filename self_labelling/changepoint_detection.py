@@ -23,7 +23,7 @@ def get_CP_dict(feature_dict, vid_list):
         dictionary of changepoints (key: video names; value: changepoints)
     """
     CP_dict = {}
-    model ='l2'
+    model = "l2"
     pen = 80
     jump = 2
 

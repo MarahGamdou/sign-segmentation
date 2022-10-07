@@ -4,6 +4,7 @@ import os
 import datetime
 import pickle
 
+
 def get_labels_start_end_time(frame_wise_labels, bg_class=["Sign"]):
     """get list of start and end times of each interval/ segment.
 
@@ -54,14 +55,17 @@ def get_num_signs(gt):
     for ix, item in enumerate(gt):
         if item_old == 0 and item == 1:
             count += 1
-        if ix == len(gt)-1 and item != 1:
+        if ix == len(gt) - 1 and item != 1:
             count += 1
 
         item_old = item
     return count
 
 
-def parse_glosses(anno_dir, target_tiers,):
+def parse_glosses(
+    anno_dir,
+    target_tiers,
+):
     """Parse ELAN EAF files into a python dictionary.
 
     Args:
@@ -83,14 +87,14 @@ def parse_glosses(anno_dir, target_tiers,):
             for annotation in eafob.get_annotation_data_for_tier(tier):
                 start, end = [(x) / 1000 for x in annotation[:2]]
                 if end_old == 0:
-                    end_old = round(end*fps)+1
-                if round(start*fps) - end_old < 6:
-                    while end_old < round(start*fps):
+                    end_old = round(end * fps) + 1
+                if round(start * fps) - end_old < 6:
+                    while end_old < round(start * fps):
                         times.append(end_old)
                         end_old += 1
-                times.append(round(start*fps))
-                times.append(round(end*fps))
-                end_old = round(end*fps)+1
+                times.append(round(start * fps))
+                times.append(round(end * fps))
+                end_old = round(end * fps) + 1
 
     return times
 
@@ -110,8 +114,8 @@ def get_weights(gt_dict):
         count_list[1] += item.count(1)
         count_list[0] += item.count(0)
 
-    weights = [1/ count_list[i] if count_list[i]!=0 else 1 for i in range(2)]
-    weights_norm = [i/ sum(weights) for i in weights]
+    weights = [1 / count_list[i] if count_list[i] != 0 else 1 for i in range(2)]
+    weights_norm = [i / sum(weights) for i in weights]
     return weights_norm
 
 
@@ -151,7 +155,7 @@ def create_folders(args):
         args: parser arguments.
 
     Returns:
-        model_load_dir: Path to pretrained model (if specified, otherwise empty) 
+        model_load_dir: Path to pretrained model (if specified, otherwise empty)
         model_save_dir: Path to the folder where the model is saved
         results_save_dir: Path to the folder where the (inference) results are saved
     """
@@ -166,54 +170,60 @@ def create_folders(args):
     test_data = args.test_data
 
     # create folder for save model and results
-    std_str = ''
+    std_str = ""
     if args.regression:
-        train_type=f'regression/std_{args.std}'
+        train_type = f"regression/std_{args.std}"
     else:
-        train_type='classification'
+        train_type = "classification"
 
     if args.weights == None:
-        weighted_str = 'unweighted'
-    elif args.weights == 'opt':
-        weighted_str = 'weighted_opt'
+        weighted_str = "unweighted"
+    elif args.weights == "opt":
+        weighted_str = "weighted_opt"
     else:
-        weighted_str = f'weighted_{args.weights[0]}_{args.weights[1]}'
+        weighted_str = f"weighted_{args.weights[0]}_{args.weights[1]}"
 
     if args.feature_normalization == 1:
-        norm_str = '_normalized'
+        norm_str = "_normalized"
     else:
-        norm_str = ''
+        norm_str = ""
 
     if args.use_pseudo_labels:
-        if train_data == 'phoenix14':
-            ssl_str = f"pseudo_labels/{args.pseudo_label_type}/train1_test{args.use_test}"
-        elif train_data == 'bsl1k':
+        if train_data == "phoenix14":
+            ssl_str = (
+                f"pseudo_labels/{args.pseudo_label_type}/train1_test{args.use_test}"
+            )
+        elif train_data == "bsl1k":
             ssl_str = f"pseudo_labels/{args.pseudo_label_type}/n_episodes{args.bsl1k_train_subset}_test{args.use_test}"
     else:
-        ssl_str = 'supervised'
+        ssl_str = "supervised"
 
     # load pretrained model from given path
     if args.pretrained:
         model_load_dir = args.pretrained
     else:
-        if args.action == 'predict':
-            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  #+args.split
+        if args.action == "predict":
+            model_load_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/epoch-{str(args.extract_epoch)}.model"  # +args.split
         else:
-            model_load_dir = ''
-    if not os.path.exists(model_load_dir) and ((args.pretrained and args.action == 'train') or args.action == 'predict'):
-        print(f'Pre-trained model not existing at: {model_load_dir}')
+            model_load_dir = ""
+    if not os.path.exists(model_load_dir) and (
+        (args.pretrained and args.action == "train") or args.action == "predict"
+    ):
+        print(f"Pre-trained model not existing at: {model_load_dir}")
         sys.exit()
 
     model_save_dir = f"./exps/{args.folder}/models/{train_type}/traindata_{train_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}"
-    if model_load_dir == '' or args.uniform:
+    if model_load_dir == "" or args.uniform:
         results_save_dir = f"./exps/{args.folder}/results/{train_type}/traindata_{train_data}/testdata_{test_data}/{args.i3d_training}/{ssl_str}/{num_stages}_{num_layers}_{num_f_maps}_{features_dim}_{bz}_{lr}_{weighted_str}/seed_{args.seed}/th_{args.classification_threshold}"
     else:
-        results_save_dir = model_save_dir.replace('models', 'results').replace(f'traindata_{train_data}', f'traindata_{train_data}/testdata_{test_data}')
-        results_save_dir = f'{results_save_dir}/th_{args.classification_threshold}'
+        results_save_dir = model_save_dir.replace("models", "results").replace(
+            f"traindata_{train_data}", f"traindata_{train_data}/testdata_{test_data}"
+        )
+        results_save_dir = f"{results_save_dir}/th_{args.classification_threshold}"
 
-    if args.action == 'train':
+    if args.action == "train":
         if os.path.exists(model_save_dir) and not args.refresh:
-            print(f'Model directory already exists: {model_save_dir}')
+            print(f"Model directory already exists: {model_save_dir}")
             sys.exit()
         else:
             os.makedirs(model_save_dir, exist_ok=True)
@@ -221,10 +231,10 @@ def create_folders(args):
 
     elif args.extract_save_pseudo_labels == 0:
         if os.path.exists(results_save_dir):
-            print(f'Results directory already exists : {results_save_dir}')
+            print(f"Results directory already exists : {results_save_dir}")
             sys.exit()
         else:
             os.makedirs(results_save_dir)
             save_args(args, results_save_dir)
-            
+
     return model_load_dir, model_save_dir, results_save_dir

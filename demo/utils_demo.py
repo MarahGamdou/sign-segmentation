@@ -11,8 +11,10 @@ import datetime
 from webvtt import WebVTT, Caption
 from PIL import Image, ImageDraw, ImageFont
 
+
 def torch_to_list(torch_tensor):
     return torch_tensor.cpu().numpy().tolist()
+
 
 def save_pred(preds, checkpoint="checkpoint", filename="preds_valid.mat"):
     preds = to_numpy(preds)
@@ -22,6 +24,7 @@ def save_pred(preds, checkpoint="checkpoint", filename="preds_valid.mat"):
     print(f"Saving to {filepath}")
     scipy.io.savemat(filepath, mdict=mdict, do_compression=False, format="4")
 
+
 def to_torch(ndarray):
     if type(ndarray).__module__ == "numpy":
         return torch.from_numpy(ndarray)
@@ -29,12 +32,14 @@ def to_torch(ndarray):
         raise ValueError(f"Cannot convert {type(ndarray)} to torch tensor")
     return ndarray
 
+
 def to_numpy(tensor):
     if torch.is_tensor(tensor):
         return tensor.cpu().numpy()
     elif type(tensor).__module__ != "numpy":
         raise ValueError(f"Cannot convert {type(tensor)} to numpy array")
     return tensor
+
 
 def im_to_numpy(img):
     img = to_numpy(img)
@@ -124,6 +129,7 @@ def color_normalize(x, mean, std):
         x[:, 2].sub_(mean[2]).div_(std[2])
     return x
 
+
 def get_labels_start_end_time(frame_wise_labels, bg_class=["Sign"]):
     """get list of start and end times of each interval/ segment.
 
@@ -155,6 +161,7 @@ def get_labels_start_end_time(frame_wise_labels, bg_class=["Sign"]):
         ends.append(i + 1)
     return labels, starts, ends
 
+
 def generate_vtt_file(all_preds, logits, save_path):
     vtt = WebVTT()
     predictions = all_preds
@@ -163,15 +170,15 @@ def generate_vtt_file(all_preds, logits, save_path):
 
     # smaller boundaries
     for ix in range(len(labels)):
-        if ix == len(labels)-1:
+        if ix == len(labels) - 1:
             break
-        diff = starts[ix+1]-ends[ix]
-        starts[ix+1] -= floor(diff/2)
-        ends[ix] += floor(diff/2)
+        diff = starts[ix + 1] - ends[ix]
+        starts[ix + 1] -= floor(diff / 2)
+        ends[ix] += floor(diff / 2)
 
     # load i3d classes
     i3d_scores = logits
-    with open('data/info/bslcp/info.pkl', 'rb') as f:
+    with open("data/info/bslcp/info.pkl", "rb") as f:
         info_data = pickle.load(f)
 
     # for start, end in zip(starts, ends):
@@ -179,38 +186,31 @@ def generate_vtt_file(all_preds, logits, save_path):
 
         if logits is not None:
             i3d_score = np.sum(np.asarray(i3d_scores)[start:end], axis=0)
-            ind = np.argpartition(i3d_score, -10)[-10:]       
+            ind = np.argpartition(i3d_score, -10)[-10:]
             ind = ind[np.argsort(-i3d_score[ind])]
-            classes = [info_data['words'][ix] for ix in ind]
+            classes = [info_data["words"][ix] for ix in ind]
 
-            class_str = ','.join(classes)
+            class_str = ",".join(classes)
         else:
-            class_str = ''
+            class_str = ""
 
         start = (start + 8) / 25
         end = (end + 8) / 25
 
         start_dt = datetime.timedelta(seconds=start)
         start_str = str(start_dt)
-        if '.' not in start_str:
-            start_str = f'{start_str}.000000'
+        if "." not in start_str:
+            start_str = f"{start_str}.000000"
 
         end_dt = datetime.timedelta(seconds=end)
         end_str = str(end_dt)
-        if '.' not in end_str:
-            end_str = f'{end_str}.000000'
+        if "." not in end_str:
+            end_str = f"{end_str}.000000"
         # creating a caption with a list of lines
-        caption = Caption(
-            start_str,
-            end_str,
-            [class_str]
-        )
+        caption = Caption(start_str, end_str, [class_str])
 
         # adding a caption
         vtt.captions.append(caption)
 
-
     # save to a different file
-    vtt.save(f'{save_path}/demo.vtt')
-
-    
+    vtt.save(f"{save_path}/demo.vtt")

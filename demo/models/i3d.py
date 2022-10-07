@@ -80,7 +80,9 @@ class Unit3D(nn.Module):
 
         if self._use_batch_norm:
             if self._num_domains == 1:
-                self.bn = nn.BatchNorm3d(self._output_channels, eps=0.001, momentum=0.01)
+                self.bn = nn.BatchNorm3d(
+                    self._output_channels, eps=0.001, momentum=0.01
+                )
             else:
                 self.bn = DomainSpecificBatchNorm3d(
                     self._output_channels, self._num_domains, eps=0.001, momentum=0.01
@@ -316,14 +318,18 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_3b"
         self.end_points[end_point] = InceptionModule(
-            192, [64, 96, 128, 16, 32, 32], name + end_point,
+            192,
+            [64, 96, 128, 16, 32, 32],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_3c"
         self.end_points[end_point] = InceptionModule(
-            256, [128, 128, 192, 32, 96, 64], name + end_point,
+            256,
+            [128, 128, 192, 32, 96, 64],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
@@ -337,35 +343,45 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_4b"
         self.end_points[end_point] = InceptionModule(
-            128 + 192 + 96 + 64, [192, 96, 208, 16, 48, 64], name + end_point,
+            128 + 192 + 96 + 64,
+            [192, 96, 208, 16, 48, 64],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_4c"
         self.end_points[end_point] = InceptionModule(
-            192 + 208 + 48 + 64, [160, 112, 224, 24, 64, 64], name + end_point,
+            192 + 208 + 48 + 64,
+            [160, 112, 224, 24, 64, 64],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_4d"
         self.end_points[end_point] = InceptionModule(
-            160 + 224 + 64 + 64, [128, 128, 256, 24, 64, 64], name + end_point,
+            160 + 224 + 64 + 64,
+            [128, 128, 256, 24, 64, 64],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_4e"
         self.end_points[end_point] = InceptionModule(
-            128 + 256 + 64 + 64, [112, 144, 288, 32, 64, 64], name + end_point,
+            128 + 256 + 64 + 64,
+            [112, 144, 288, 32, 64, 64],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_4f"
         self.end_points[end_point] = InceptionModule(
-            112 + 288 + 64 + 64, [256, 160, 320, 32, 128, 128], name + end_point,
+            112 + 288 + 64 + 64,
+            [256, 160, 320, 32, 128, 128],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
@@ -379,14 +395,18 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_5b"
         self.end_points[end_point] = InceptionModule(
-            256 + 320 + 128 + 128, [256, 160, 320, 32, 128, 128], name + end_point,
+            256 + 320 + 128 + 128,
+            [256, 160, 320, 32, 128, 128],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
 
         end_point = "Mixed_5c"
         self.end_points[end_point] = InceptionModule(
-            256 + 320 + 128 + 128, [384, 192, 384, 48, 128, 128], name + end_point,
+            256 + 320 + 128 + 128,
+            [384, 192, 384, 48, 128, 128],
+            name + end_point,
         )
         if self._final_endpoint == end_point:
             return
